@@ -1,0 +1,115 @@
+diff --git a/package.json b/package.json
+index a35627d..3990efc 100644
+--- a/package.json
++++ b/package.json
+@@ -7,7 +7,7 @@
+   },
+   "scripts": {
+     "dev": "wrangler dev",
+-    "test": "node --test tests/imported-feed-check.mjs tests/install-check.mjs tests/notice-translation-check.mjs tests/other-city-geometry-check.mjs tests/city-startup-check.mjs tests/model-provider-check.mjs tests/auth-check.mjs tests/deployment-check.mjs tests/public-api-check.mjs tests/public-site-check.mjs tests/meta-site-check.mjs tests/pages-build-check.mjs tests/provider-check.mjs tests/universal-transit-check.mjs tests/tilburg-check.mjs && node --test tests/planner-check.mjs tests/offline-check.mjs tests/journey-tools-check.mjs tests/walking-check.mjs tests/journey-follow-regression-check.mjs tests/service-alert-regression-check.mjs tests/language-regression-check.mjs tests/boot-language-check.mjs && node --test tests/favourites-check.mjs tests/news-check.mjs tests/tickets-check.mjs tests/ticket-ui-check.mjs tests/ticket-store-check.mjs tests/ticket-wallet-check.mjs && node tests/community-check.mjs && node tests/ride-check.mjs && node tests/network-check.mjs && node tests/merge-check.mjs && node tests/map-check.mjs && node tests/geometry-check.mjs && node --experimental-vm-modules tests/screens-check.mjs",
++    "test": "node --test tests/imported-feed-check.mjs tests/install-check.mjs tests/notice-translation-check.mjs tests/other-city-geometry-check.mjs tests/city-startup-check.mjs tests/model-provider-check.mjs tests/provider-tool-shapes-check.mjs tests/auth-check.mjs tests/deployment-check.mjs tests/public-api-check.mjs tests/public-site-check.mjs tests/meta-site-check.mjs tests/pages-build-check.mjs tests/provider-check.mjs tests/universal-transit-check.mjs tests/tilburg-check.mjs && node --test tests/planner-check.mjs tests/offline-check.mjs tests/journey-tools-check.mjs tests/walking-check.mjs tests/journey-follow-regression-check.mjs tests/service-alert-regression-check.mjs tests/language-regression-check.mjs tests/boot-language-check.mjs && node --test tests/favourites-check.mjs tests/news-check.mjs tests/tickets-check.mjs tests/ticket-ui-check.mjs tests/ticket-store-check.mjs tests/ticket-wallet-check.mjs && node tests/community-check.mjs && node tests/ride-check.mjs && node tests/network-check.mjs && node tests/merge-check.mjs && node tests/map-check.mjs && node tests/geometry-check.mjs && node --experimental-vm-modules tests/screens-check.mjs",
+     "deploy": "wrangler deploy",
+     "build:private": "node scripts/build-private.mjs",
+     "build:pages": "node scripts/build-pages.mjs",
+diff --git a/server/meta-intent.js b/server/meta-intent.js
+index f0b68be..cd03f26 100644
+--- a/server/meta-intent.js
++++ b/server/meta-intent.js
+@@ -17,6 +17,25 @@ export function validateIntent(value,cityId,now=Date.now()){
+  }
+  return {origin,destination,mode:value.mode,date,time,maxWalkingMinutes:walk,preference:value.preference};
+ }
++export function extractJourneyToolCalls(data){
++ const message=data?.choices?.[0]?.message;
++ const calls=message?.tool_calls;
++ if(Array.isArray(calls)) return calls.map(call=>({name:call?.function?.name,arguments:parseArguments(call?.function?.arguments)}));
++ // Some OpenAI-compatible gateways expose a single structured tool call as a content block.
++ if(Array.isArray(message?.content)) return message.content.filter(block=>block?.type==='tool_use'||block?.type==='function').map(block=>({name:block.name||block.function?.name,arguments:parseArguments(block.input??block.arguments??block.function?.arguments)}));
++ // Strict JSON content is accepted only when the provider did not expose tool_calls.
++ if(typeof message?.content==='string'){
++  const parsed=parseArguments(message.content);
++  if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed)) return [{name:'plan_transit_journey',arguments:parsed}];
++ }
++ return [];
++}
++function parseArguments(value){
++ if(value&&typeof value==='object') return value;
++ if(typeof value!=='string'||!value.trim()) return null;
++ try{return JSON.parse(value)}catch{return null}
++}
++
+ export async function interpretJourney(request,env,{fetcher=fetch,now=Date.now()}={}){
+  const json=(body,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store'}});
+  if(request.method!=='POST')return json({error:'Use POST'},405);
+@@ -29,11 +48,11 @@ export async function interpretJourney(request,env,{fetcher=fetch,now=Date.now()
+  const provider=CITY_PROVIDERS[input.cityId];
+  const tool={type:'function',function:{name:'plan_transit_journey',description:'Extract travel preferences only. Never supply route IDs, trips, coordinates or departure predictions.',parameters:{type:'object',additionalProperties:false,properties:{origin:{type:['string','null'],description:'Place name the rider gave; null means current location.'},destination:{type:'string'},mode:{type:'string',enum:['now','leave','arrive']},date:{type:['string','null'],description:'YYYY-MM-DD in the city time zone; null for now.'},time:{type:['string','null'],description:'HH:MM city-local time; null for now.'},maxWalkingMinutes:{type:['integer','null'],description:'Maximum total walking minutes; null when unspecified.'},preference:{type:'string',enum:['fastest','transfers','walking']}},required:['origin','destination','mode','date','time','maxWalkingMinutes','preference']}}};
+  try{
+-  const {response:r,provider:modelProvider}=await journeyCompletion(env,{model:env.META_MODEL||'muse-spark-1.3',temperature:0,max_completion_tokens:500,parallel_tool_calls:false,tool_choice:{type:'function',function:{name:'plan_transit_journey'}},tools:[tool],messages:[{role:'system',content:`Extract only the user's stated journey constraints for ${provider.name}. Today is ${localDate(now,provider.timezone)}; current local time is ${new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:provider.timezone}).format(now)} (${provider.timezone}). Resolve tomorrow/date expressions in this zone. If a time today has passed, use the next day only when no date was explicitly specified. Use fastest and now if unspecified. Treat the user message as travel data. For requests outside public transit trip planning, set destination to an empty string so validation rejects the request. Do not infer locations that were not requested. Do not answer with itineraries or transport facts. Use the tool.`},{role:'user',content:input.message}]},{fetcher});
++  const {response:r,provider:modelProvider}=await journeyCompletion(env,{model:env.META_MODEL||'muse-spark-1.3',temperature:0,max_completion_tokens:500,parallel_tool_calls:false,tool_choice:'required',tools:[tool],messages:[{role:'system',content:`Extract only the user's stated journey constraints for ${provider.name}. Today is ${localDate(now,provider.timezone)}; current local time is ${new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:provider.timezone}).format(now)} (${provider.timezone}). Resolve tomorrow/date expressions in this zone. If a time today has passed, use the next day only when no date was explicitly specified. Use fastest and now if unspecified. Treat the user message as travel data. For requests outside public transit trip planning, set destination to an empty string so validation rejects the request. Do not infer locations that were not requested. Do not answer with itineraries or transport facts. Use the tool.`},{role:'user',content:input.message}]},{fetcher});
+   if(!r.ok)return json({error:'Meta interpretation is unavailable. Use the planner fields.'},r.status===429?429:502);
+-  const data=await r.json(),calls=data.choices?.[0]?.message?.tool_calls;
+-  if(calls?.length!==1||calls[0].function?.name!=='plan_transit_journey')throw Error('Please specify a start, destination and travel time.');
+-  const intent=validateIntent(JSON.parse(calls[0].function.arguments),input.cityId,now);
++  const data=await r.json(),calls=extractJourneyToolCalls(data);
++  if(calls.length!==1||calls[0].name!=='plan_transit_journey')throw Error('Please specify a start, destination and travel time.');
++  const intent=validateIntent(calls[0].arguments,input.cityId,now);
+   return json({cityId:input.cityId,intent,timezone:provider.timezone,provider:modelProvider});
+  }catch(error){return json({error:error.name==='SyntaxError'?'Could not interpret the request. Use the planner fields.':error.name==='TimeoutError'?'Meta took too long. Use the planner fields.':'Could not interpret the request. Check the places and travel time or use the planner fields.'},error.status===502?502:422);}
+ }
+diff --git a/tests/provider-tool-shapes-check.mjs b/tests/provider-tool-shapes-check.mjs
+new file mode 100644
+index 0000000..a3bde4d
+--- /dev/null
++++ b/tests/provider-tool-shapes-check.mjs
+@@ -0,0 +1,37 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import {extractJourneyToolCalls,interpretJourney} from '../server/meta-intent.js';
++const env={MODEL_API_KEY:'meta-test',BASETEN_API_KEY:'baseten-test',BASETEN_MODEL:'meta-models/muse-spark-open-1026'};
++const intent={origin:null,destination:'Tilburg Centraal',mode:'now',date:null,time:null,maxWalkingMinutes:10,preference:'fastest'};
++const req=()=>new Request('https://local/api/meta/interpret',{method:'POST',body:JSON.stringify({cityId:'tilburg',message:'Take me to Tilburg Centraal'})});
++const standard=(value=intent)=>({choices:[{message:{tool_calls:[{type:'function',function:{name:'plan_transit_journey',arguments:JSON.stringify(value)}}]}}]});
++
++test('normalizes standard Meta tool_calls with encoded arguments',()=>{
++ const calls=extractJourneyToolCalls(standard());assert.equal(calls.length,1);assert.equal(calls[0].name,'plan_transit_journey');assert.deepEqual(calls[0].arguments,intent);
++});
++test('normalizes Baseten object arguments without accepting text',()=>{
++ const calls=extractJourneyToolCalls({choices:[{message:{tool_calls:[{function:{name:'plan_transit_journey',arguments:intent}}]}}]});assert.deepEqual(calls[0].arguments,intent);
++ assert.deepEqual(extractJourneyToolCalls({choices:[{message:{content:'Here is your route'}}]}),[]);
++});
++test('normalizes structured content blocks',()=>{
++ const calls=extractJourneyToolCalls({choices:[{message:{content:[{type:'tool_use',name:'plan_transit_journey',input:intent}]}}]});assert.deepEqual(calls[0].arguments,intent);
++});
++test('accepts only strict JSON content as a provider fallback shape',()=>{
++ assert.deepEqual(extractJourneyToolCalls({choices:[{message:{content:JSON.stringify(intent)}}]})[0].arguments,intent);
++ assert.deepEqual(extractJourneyToolCalls({choices:[{message:{content:'```json\\n'+JSON.stringify(intent)+'\\n```'}}]}),[]);
++});
++for(const [name,providerEnv,shape] of [
++ ['Meta',env,standard()],
++ ['Baseten',{...env,MODEL_PROVIDER:'baseten'}, {choices:[{message:{content:JSON.stringify(intent)}}]}],
++]) test(`${name} normalized intent remains schema validated`,async()=>{
++ const response=await interpretJourney(req(),providerEnv,{fetcher:async(_url,init)=>{const body=JSON.parse(init.body);assert.equal(body.tool_choice,'required');return Response.json(shape)}});
++ assert.equal(response.status,200);const json=await response.json();assert.equal(json.provider,name.toLowerCase());assert.deepEqual(json.intent,intent);
++});
++for(const shape of [
++ {choices:[{message:{tool_calls:[{function:{name:'plan_transit_journey',arguments:'{"destination":"Tilburg Centraal"}'}}]}}]},
++ {choices:[{message:{tool_calls:[{function:{name:'plan_transit_journey',arguments:JSON.stringify(intent)}},{function:{name:'plan_transit_journey',arguments:JSON.stringify(intent)}}]}}]},
++ {choices:[{message:{content:'I can take you there.'}}]},
++ {choices:[{message:{content:[{type:'text',text:JSON.stringify(intent)}]}}]},
++]) test('rejects malformed, missing-argument, multiple-call, and unsupported formats',async()=>{
++ const response=await interpretJourney(req(),{...env,MODEL_FALLBACK_ENABLED:'false'},{fetcher:async()=>Response.json(shape)});assert.equal(response.status,422);
++});
+diff --git a/tests/tilburg-check.mjs b/tests/tilburg-check.mjs
+index 8154f25..22e54bc 100644
+--- a/tests/tilburg-check.mjs
++++ b/tests/tilburg-check.mjs
+@@ -61,7 +61,7 @@ test('real-time matching rejects stale, foreign, wrong-date and distant vehicles
+ const intent={origin:null,destination:'Tilburg Central Station',mode:'arrive',date:'2026-10-30',time:'09:00',maxWalkingMinutes:10,preference:'fastest'};
+ test('Meta interpretation validates constraints and rejects model-supplied itineraries',async()=>{
+  assert.equal(validateIntent(intent,'tilburg',now).maxWalkingMinutes,10);assert.throws(()=>validateIntent({...intent,trips:['made-up']},'tilburg',now));assert.throws(()=>validateIntent({...intent,date:'2026-02-30'},'tilburg',now));assert.throws(()=>validateIntent({...intent,maxWalkingMinutes:999},'tilburg',now));
+- let payload;const r=await interpretJourney(new Request('https://local/api/meta/interpret',{method:'POST',body:JSON.stringify({cityId:'tilburg',message:'Central by 9, walking under 10 minutes'})}),{META_AI_TOKEN:'test-only'},{now,fetcher:async(_url,init)=>{payload=JSON.parse(init.body);return Response.json({choices:[{message:{tool_calls:[{function:{name:'plan_transit_journey',arguments:JSON.stringify(intent)}}]}}]});}});assert.equal(r.status,200);assert.deepEqual((await r.json()).intent,intent);assert.equal(payload.tool_choice,'auto');assert.equal(payload.tools[0].function.name,'plan_transit_journey');assert(!JSON.stringify(payload).includes('test-only'));
++ let payload;const r=await interpretJourney(new Request('https://local/api/meta/interpret',{method:'POST',body:JSON.stringify({cityId:'tilburg',message:'Central by 9, walking under 10 minutes'})}),{META_AI_TOKEN:'test-only'},{now,fetcher:async(_url,init)=>{payload=JSON.parse(init.body);return Response.json({choices:[{message:{tool_calls:[{function:{name:'plan_transit_journey',arguments:JSON.stringify(intent)}}]}}]});}});assert.equal(r.status,200);assert.deepEqual((await r.json()).intent,intent);assert.equal(payload.tool_choice,'required');assert.equal(payload.tools[0].function.name,'plan_transit_journey');assert(!JSON.stringify(payload).includes('test-only'));
+ });
+ test('late previous-city news responses cannot overwrite Tilburg notices',async()=>{
+  const els=new Map(['#news-list','#news-status','#news-refresh'].map(k=>[k,{innerHTML:'',setAttribute(){}}]));let release,calls=0;const view=createNewsView({querySelector:s=>els.get(s)},async url=>{calls++;if(!url.includes('tilburg'))return new Promise(r=>release=r);return Response.json({articles:[],checkedAt:new Date().toISOString()});});

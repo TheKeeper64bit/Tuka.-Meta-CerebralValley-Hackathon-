@@ -42,7 +42,10 @@ git diff --name-only --diff-filter=A "$BASE" "$EVENT" > "$TMP/new-files.txt"
 while IFS= read -r path; do
   [[ -n "$path" ]] || continue
   mkdir -p "$(dirname "$path")"
-  if [[ -f "$ROOT/$path" ]]; then
+  # Empty tracked placeholders are deliberately not treated as submitted
+  # artifacts. This lets the repository keep a reviewable file list while
+  # fetching binary/generated files from the pinned event ref.
+  if [[ -s "$ROOT/$path" ]]; then
     cp "$ROOT/$path" "$path"
     actual="$(git hash-object "$path")"
     expected="$(git rev-parse "$EVENT:$path")"
@@ -53,6 +56,15 @@ while IFS= read -r path; do
     git show "$EVENT:$path" > "$path"
     echo "Pinned upstream event artifact (not bundled): $path"
   fi
+  # Preserve the mode recorded in the pinned event tree as well as the bytes.
+  # Git applies content patches but does not infer the mode for newly restored
+  # files created by a shell redirection.
+  mode="$(git ls-tree "$EVENT" -- "$path" | awk '{print $1}')"
+  case "$mode" in
+    100755) chmod +x "$path" ;;
+    100644) chmod -x "$path" ;;
+    *) echo "Unsupported mode $mode for $path" >&2; exit 1 ;;
+  esac
   git add -f -- "$path"
 done < "$TMP/new-files.txt"
 
@@ -68,6 +80,14 @@ if [[ "$actual" != "$expected" ]]; then
   exit 1
 fi
 echo 'PASS: exact source reconstruction'
+# Apply post-event compatibility fixes as a reviewable hackathon contribution.
+# The pinned integrated event tree remains the reconstruction baseline above.
+COMPAT_PATCH="$ROOT/patches/provider-tool-compat.patch"
+if [[ -f "$COMPAT_PATCH" ]]; then
+  git apply --check "$COMPAT_PATCH"
+  git apply "$COMPAT_PATCH"
+  echo "Applied hackathon compatibility patch: $(basename "$COMPAT_PATCH")"
+fi
 if [[ "$MODE" == verify ]]; then exit 0; fi
 npm ci
 if [[ "$MODE" == test ]]; then npm test; fi

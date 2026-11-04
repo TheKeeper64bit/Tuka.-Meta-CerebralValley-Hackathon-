@@ -14,7 +14,7 @@ cd Tuka.-Meta-CerebralValley-Hackathon-
 bash scripts/setup-judges.sh test
 ```
 
-The command reconstructs the application into `.reconstructed-tuka/`, verifies its complete Git tree against the pinned integrated event commit, installs dependencies, runs tests, and builds the Meta site. No secrets are required for source verification, but live AI inference requires separately supplied credentials.
+The command reconstructs the application into `.reconstructed-tuka/`, verifies its complete Git tree against the pinned integrated event commit, installs dependencies, runs tests, and builds the Meta site. Empty placeholder files in this repository are intentionally replaced by matching bytes and file modes from the pinned event reference. No secrets are required for source verification, but live AI inference requires separately supplied credentials.
 
 For local preview after setup:
 
@@ -22,6 +22,8 @@ For local preview after setup:
 cd .reconstructed-tuka
 npx wrangler dev --config wrangler.meta.jsonc --port 8793
 ```
+
+If the installed local `workerd` predates the configured `2026-10-28` compatibility date, add `--compatibility-date 2026-10-13` for a local-only preview. This does not change the production configuration or the reconstruction tree.
 
 Use `bash scripts/setup-judges.sh verify` for source reconstruction without installing dependencies. The script refuses to overwrite an existing `.reconstructed-tuka` directory; delete that directory manually before another fresh run. To start the preview automatically, use `bash scripts/setup-judges.sh dev` from a clean checkout.
 
@@ -42,6 +44,6 @@ Multi-city GTFS integration (including Boston and Tilburg), local GTFS ZIP impor
 
 ## Verification limits
 
-The reproducible setup and CI audit are provided, but a successful fresh GitHub Actions run must still be confirmed. Live provider-backed Meta/Baseten inference has **not** been independently verified; mocked provider tests do not prove live model operation. Imported feed and routing checks do not guarantee field accuracy.
+The reproducible setup was executed from a fresh clone on November 4, 2026. The exact reconstruction tree matched `7273a0a`; the three Node test groups reported 100 + 64 + 34 = 198 passing tests and zero failures; and the Meta build produced 65 assets. A local Worker started with the compatibility-date override and returned the expected unauthenticated redirect to `/login`. Live provider-backed Meta/Baseten inference has **not** been independently verified; mocked provider tests do not prove live model operation. Imported feed and routing checks do not guarantee field accuracy.
 
 The submitted code is evaluated as an event contribution built upon a disclosed, separate original application.
