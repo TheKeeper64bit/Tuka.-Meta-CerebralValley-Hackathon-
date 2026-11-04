@@ -18,6 +18,7 @@ git diff --binary --unified=0 "$BASE" "$HEAD" > "$TMP/changes.patch"
 git checkout --detach "$BASE"
 git apply --check "$TMP/changes.patch"
 git apply --binary "$TMP/changes.patch"
+git add -A
 ACTUAL="$(git write-tree)"
 EXPECTED="$(git rev-parse "$HEAD^{tree}")"
 printf 'Baseline: %s\nTarget: %s\nReconstructed tree: %s\nExpected tree: %s\n' "$BASE" "$HEAD" "$ACTUAL" "$EXPECTED" | tee "$ROOT/reports/reconstruction/result.txt"
