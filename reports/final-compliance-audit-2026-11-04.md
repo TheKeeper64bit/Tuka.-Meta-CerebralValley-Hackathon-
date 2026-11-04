@@ -12,7 +12,12 @@ The repository is public, Actions are enabled, and the workflow is named **Judge
 - Status: completed / success
 - The run executed the reconstruction script, locked install, tests and Meta build.
 
-The new audit branch changes the workflow trigger and documentation; its pull-request run should be checked before merging.
+The final audit commit also completed successfully in both trigger modes:
+
+- Pull request run: https://github.com/TheKeeper64bit/Tuka.-Meta-CerebralValley-Hackathon-/actions/runs/41870259587
+- Push run: https://github.com/TheKeeper64bit/Tuka.-Meta-CerebralValley-Hackathon-/actions/runs/41870249808
+- Commit: `4e5185686c50729ce240c167f6a5f7607d00d040`
+- Both completed with conclusion `success`.
 
 ## Reconstruction and tests
 
