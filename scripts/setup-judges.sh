@@ -44,18 +44,16 @@ while IFS= read -r path; do
   mkdir -p "$(dirname "$path")"
   if [[ -f "$ROOT/$path" ]]; then
     cp "$ROOT/$path" "$path"
-    if ! git diff --quiet "$EVENT" -- "$path" 2>/dev/null; then
-      # New file is untracked at BASE, so compare its content via Git object.
-      actual="$(git hash-object "$path")"
-      expected="$(git rev-parse "$EVENT:$path")"
-      if [[ "$actual" != "$expected" ]]; then
-        echo "Submission file differs from pinned hackathon source: $path" >&2; exit 1
-      fi
+    actual="$(git hash-object "$path")"
+    expected="$(git rev-parse "$EVENT:$path")"
+    if [[ "$actual" != "$expected" ]]; then
+      echo "Submission file differs from pinned hackathon source: $path" >&2; exit 1
     fi
   else
     git show "$EVENT:$path" > "$path"
     echo "Pinned upstream event artifact (not bundled): $path"
   fi
+  git add -f -- "$path"
 done < "$TMP/new-files.txt"
 
 # Compare full reconstructed tree to the integrated commit, including binaries.
