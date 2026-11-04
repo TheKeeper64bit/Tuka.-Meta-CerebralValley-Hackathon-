@@ -25,3 +25,6 @@ node scripts/build-meta.mjs
 ```
 
 The integrated development branch includes pre-event code, and must not be pushed wholesale into this hackathon submission repository. These commands are an inspection recipe, not a claim that this submission alone is a standalone application. The complete reconstruction has not been independently tested in this extraction.
+## Automated judge setup
+
+From a fresh checkout of this submission, run `bash scripts/setup-judges.sh test` (Git, Node.js 22+ and npm required). It fetches the original repository at the pinned baseline and pinned event commit, extracts the changes to pre-existing files, adds event-created files, verifies the exact resulting Git tree, runs `npm ci` and `npm test`, then builds the Meta version. The pinned integrated event commit remains an explicit source dependency. The setup script does not deploy the app. A passing CI run has not yet been independently confirmed.
