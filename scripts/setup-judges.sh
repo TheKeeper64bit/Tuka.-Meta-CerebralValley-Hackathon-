@@ -42,7 +42,10 @@ git diff --name-only --diff-filter=A "$BASE" "$EVENT" > "$TMP/new-files.txt"
 while IFS= read -r path; do
   [[ -n "$path" ]] || continue
   mkdir -p "$(dirname "$path")"
-  if [[ -f "$ROOT/$path" ]]; then
+  # Empty tracked placeholders are deliberately not treated as submitted
+  # artifacts. This lets the repository keep a reviewable file list while
+  # fetching binary/generated files from the pinned event ref.
+  if [[ -s "$ROOT/$path" ]]; then
     cp "$ROOT/$path" "$path"
     actual="$(git hash-object "$path")"
     expected="$(git rev-parse "$EVENT:$path")"
@@ -53,6 +56,15 @@ while IFS= read -r path; do
     git show "$EVENT:$path" > "$path"
     echo "Pinned upstream event artifact (not bundled): $path"
   fi
+  # Preserve the mode recorded in the pinned event tree as well as the bytes.
+  # Git applies content patches but does not infer the mode for newly restored
+  # files created by a shell redirection.
+  mode="$(git ls-tree "$EVENT" -- "$path" | awk '{print $1}')"
+  case "$mode" in
+    100755) chmod +x "$path" ;;
+    100644) chmod -x "$path" ;;
+    *) echo "Unsupported mode $mode for $path" >&2; exit 1 ;;
+  esac
   git add -f -- "$path"
 done < "$TMP/new-files.txt"
 

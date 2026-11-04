@@ -6,6 +6,8 @@ on:
       - 'scripts/setup-judges.sh'
       - '.github/workflows/reconstruction.yml'
       - 'README.md'
+      - 'REPRODUCE.md'
+      - 'HACKATHON_SCOPE.md'
 permissions:
   contents: read
 jobs:
