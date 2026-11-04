@@ -1,0 +1,26 @@
+name: Hackathon reconstruction audit
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/reconstruct-audit.sh'
+      - '.github/workflows/reconstruction.yml'
+permissions:
+  contents: read
+jobs:
+  reconstruct:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Reconstruct from disclosed original dependency and test
+        run: bash scripts/reconstruct-audit.sh
+      - name: Upload audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reconstruction-evidence
+          path: reports/reconstruction/
