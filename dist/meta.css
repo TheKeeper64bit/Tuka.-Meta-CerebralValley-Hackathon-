@@ -1,0 +1,81 @@
+.meta-open{display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);font-size:12px;font-weight:750}.meta-orb{display:grid;place-items:center;width:20px;height:20px;border-radius:7px;background:linear-gradient(135deg,#9ae6ff,#9e8cff);color:#102737;font-size:13px}.meta-dialog{width:min(720px,calc(100% - 28px));max-height:88dvh;overflow:auto;padding:0;border:1px solid var(--line);border-radius:24px;background:var(--panel);color:var(--ink);box-shadow:0 24px 100px #0b233855}.meta-dialog::backdrop{background:#07152199}.meta-head{display:flex;justify-content:space-between;gap:18px;padding:26px 28px 20px;background:linear-gradient(135deg,#102d4a,#1c4a70);color:#f5fbff}.meta-head h2{font-size:28px;margin:6px 0}.meta-head p{margin:0;color:#c7deef;font-size:13px;line-height:1.5}.meta-kicker{font-size:9px;font-weight:850;letter-spacing:1.5px;color:#7cc8ff}.meta-head .meta-kicker{color:#b6e9ff}.meta-close{width:38px;height:38px;border:1px solid #ffffff44;border-radius:50%;background:#ffffff18;color:#fff;font-size:25px}.meta-city-section,.meta-chat{padding:22px 28px}.meta-chat{border-top:1px solid var(--line)}.meta-section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}.meta-section-heading h3{margin:5px 0 0;font-size:19px}.meta-status,.meta-lock{font-size:11px;color:var(--muted);padding-top:3px}.meta-cities{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.meta-city{display:flex;flex-direction:column;gap:6px;text-align:left;padding:15px;border:1px solid var(--line);border-radius:15px;background:var(--bg);color:var(--ink)}.meta-city.selected{border-color:var(--blue);box-shadow:0 0 0 2px var(--soft)}.meta-city-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.meta-city-top strong{font-size:17px}.meta-city small,.meta-city>span:last-child{font-size:11px;color:var(--muted);line-height:1.45}.meta-city-pill{font-size:9px;text-transform:uppercase;letter-spacing:1px;padding:4px 6px;border-radius:8px;background:#fff0c7;color:#815b00;font-weight:800}.meta-city-pill.live{background:#d6f5e9;color:#087356}.meta-chat-log{display:flex;flex-direction:column;gap:8px;min-height:90px;max-height:220px;overflow:auto;padding:4px 0 12px}.meta-message{max-width:88%;margin:0;padding:10px 12px;border-radius:12px;font-size:13px;line-height:1.5;white-space:pre-wrap}.meta-message-ai{align-self:flex-start;background:var(--soft)}.meta-message-user{align-self:flex-end;background:var(--blue);color:#fff}.meta-message-error{align-self:flex-start;background:#fff0f0;color:#9d2f36}.meta-ask{display:flex;gap:8px}.meta-ask input{flex:1;min-width:0;border:1px solid var(--line);border-radius:11px;background:var(--bg);color:var(--ink);padding:12px;font-size:14px}.meta-footnote{margin:0;padding:14px 28px 22px;color:var(--muted);font-size:11px;line-height:1.5}body.dark .meta-head{background:linear-gradient(135deg,#122c46,#1f5475)}body.dark .meta-city-pill{background:#4d4020;color:#ffe29b}body.dark .meta-city-pill.live{background:#174b40;color:#9bf0d3}@media(max-width:700px){.meta-open span:last-child{display:none}.meta-open{padding:8px}.meta-dialog{border-radius:20px}.meta-head,.meta-city-section,.meta-chat{padding-left:18px;padding-right:18px}.meta-cities{grid-template-columns:1fr}.meta-footnote{padding-left:18px;padding-right:18px}.meta-section-heading{display:block}.meta-status,.meta-lock{display:block;margin-top:7px}.meta-ask .primary{padding-left:13px;padding-right:13px}}
+.city-picker{max-width:760px}.city-picker .meta-cities{grid-template-columns:1fr}.city-picker .meta-city{min-height:0}.meta-ask{flex-wrap:wrap}.meta-ask-mode{display:flex;align-items:center;gap:8px;width:100%;font-size:12px;color:var(--muted)}.meta-ask-mode select{font:inherit;padding:6px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)}
+@media(max-width:600px){#city-open{padding:8px;font-size:12px}.meta-ask input{min-width:0}}
+
+/* Keep the shared Skopje shell when the city and Copilot controls are present. */
+body.has-city-picker header{height:auto;min-height:58px;flex-wrap:wrap}
+body.has-city-picker .headtools{min-width:0;flex-wrap:wrap;justify-content:flex-end}
+body.has-city-picker .brand{flex-shrink:0}
+body.has-city-picker #feedstatus{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(min-width:800px){body.has-city-picker.map-mode header{max-width:900px;width:calc(100% - 32px)}}
+@media(max-width:799px){
+ body.has-city-picker header{gap:8px;padding:10px 12px}
+ body.has-city-picker .headtools{flex:1 1 220px;gap:6px}
+ body.has-city-picker .headtools>button{flex-shrink:0}
+ body.has-city-picker #feedstatus{max-width:100px;font-size:10px;padding:6px 8px}
+ body.has-city-picker.map-mode .map-top-label,body.has-city-picker.map-mode .map-tools{top:calc(var(--header-height) + 28px)}
+ body.has-city-picker.map-mode .change-stop{top:calc(var(--header-height) + 84px)}
+ body.has-city-picker.map-mode .maplibregl-ctrl-top-right{top:calc(var(--header-height) + 232px)}
+ body.has-city-picker.map-mode .correction-panel{top:calc(var(--header-height) + 100px)}
+}
+
+/* A quiet primary row; secondary actions stay together behind More. */
+body.has-city-picker header.header-polished{flex-wrap:nowrap;gap:14px;overflow:visible}
+.header-polished .headtools{flex:0 0 auto;flex-wrap:nowrap;gap:8px}
+.header-polished .brand .city{display:none}
+.header-polished #city-open{display:inline-flex;align-items:center;justify-content:center;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:40px;padding:10px 14px}
+.header-more{position:relative;flex:none}
+.header-more-toggle{display:grid;place-items:center;width:40px;height:40px;list-style:none;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);font-weight:800;font-size:17px;letter-spacing:1px;cursor:pointer}
+.header-more-toggle::-webkit-details-marker{display:none}
+.header-more-toggle:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+.header-more[open] .header-more-toggle{background:var(--soft);color:var(--blue);border-color:var(--blue)}
+.header-menu{position:absolute;right:0;top:calc(100% + 12px);z-index:55;width:min(310px,calc(100vw - 36px));padding:18px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:20px;box-shadow:0 14px 45px #102c4326}
+.header-menu-label{margin:0 0 10px;font-size:14px;font-weight:750}
+.header-polished .header-menu #feedstatus{display:block;max-width:none;padding:0 0 14px;margin-bottom:14px;border:0;border-bottom:1px solid var(--line);border-radius:0;text-align:left;background:transparent;white-space:normal;font-size:12px;line-height:1.5}
+.header-menu-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.header-polished .header-menu-actions>button{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;height:auto;min-height:46px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);font-size:13px;font-weight:650}
+.header-polished .header-menu-actions>button[hidden]{display:none}
+.header-menu-actions [data-action-label]::after{content:attr(data-action-label);font-size:12px;letter-spacing:0}
+.header-menu-actions .install-label{display:inline!important}
+.header-menu-actions .install-symbol{display:none!important}
+@media(max-width:799px){
+ body.has-city-picker header.header-polished{padding:10px 12px;gap:10px}
+ body.has-city-picker .header-polished .headtools{flex:0 0 auto;gap:6px}
+ .header-polished #city-open{font-size:12px;max-width:145px;padding:9px 11px}
+ .header-polished .meta-open{width:38px;height:40px;padding:8px;justify-content:center}
+ .header-polished .meta-open>span:last-child{display:none}
+ .header-polished .brand .wordmark{font-size:29px}
+}
+@media(max-width:359px){.header-polished #city-open{max-width:112px;padding:9px}.header-polished .brand .wordmark{font-size:27px}.header-polished .header-more-toggle{width:36px}}
+.header-polished .header-menu-actions #install-app{width:100%;min-width:0;padding:10px;justify-content:center}
+
+/* Hackathon Copilot and shared interaction feedback. */
+#meta-lab{width:min(560px,calc(100% - 24px));max-height:calc(100dvh - 24px);border:1px solid var(--line);border-radius:22px;box-shadow:0 18px 70px #102c4336}
+#meta-lab .meta-head{background:var(--panel);color:var(--ink);padding:20px}
+#meta-lab .meta-head h2{font-size:clamp(21px,5vw,30px);line-height:1.2}
+#meta-lab .meta-head p{color:var(--muted);font-size:13px}
+#meta-lab .meta-kicker,#meta-lab .meta-close{color:var(--blue)}
+#meta-lab .meta-close{background:var(--soft);min-width:44px;min-height:44px}
+#meta-lab .meta-chat{padding:16px 20px 20px}
+.meta-context{font-size:13px;font-weight:750;color:var(--blue);margin-bottom:12px}
+.meta-modes{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;background:var(--soft);border-radius:13px}
+.meta-modes button{min-height:44px;background:transparent;color:var(--ink);border-radius:10px;padding:7px;font-size:13px;font-weight:700}
+.meta-modes button[aria-pressed=true]{background:var(--panel);color:var(--blue);box-shadow:0 1px 4px #102c4320}
+#meta-lab .meta-chat-log{min-height:0;max-height:min(34dvh,260px);margin:12px 0;background:var(--soft)}
+#meta-lab .meta-chat-log:empty{display:none}
+#meta-lab .meta-ask{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:12px}
+#meta-lab .meta-ask input,#meta-lab .meta-ask button{min-height:46px}
+.meta-help{font-size:12px;line-height:1.5;color:var(--muted)}
+.meta-profiles{border-top:1px solid var(--line);padding-top:12px;margin-top:12px;font-size:13px}
+.meta-profiles summary{color:var(--blue);cursor:pointer;font-weight:700;min-height:32px}
+#meta-lab .meta-profiles .meta-cities{display:flex;flex-wrap:wrap;gap:8px}
+#meta-lab .meta-profiles .meta-city{min-height:44px;padding:8px 14px}
+.meta-polished button{transition:background-color .16s,color .16s,transform .14s}
+.meta-polished button:not(:disabled):active{transform:scale(.97)}
+.meta-polished main .page:not(#home):not([hidden]),#meta-lab[open],#meta-lab .meta-message{animation:meta-appear .19s ease-out both}
+@keyframes meta-appear{from{opacity:0;translate:0 4px}to{opacity:1;translate:0 0}}
+@media(prefers-reduced-motion:reduce){
+ .meta-polished button{transition:none}
+ .meta-polished button:not(:disabled):active{transform:none}
+ .meta-polished main .page:not(#home):not([hidden]),#meta-lab[open],#meta-lab .meta-message{animation:none}
+}
