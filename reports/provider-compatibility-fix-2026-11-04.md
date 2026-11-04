@@ -38,3 +38,14 @@ After explicit approval, run exactly two local authenticated requests:
 2. One Baseten request to `/api/meta/interpret`, with fallback disabled and no retry, using `meta-models/muse-spark-open-1026`.
 
 Record only HTTP status, provider label, elapsed time and whether the returned intent passed schema validation. Do not log raw provider responses or secrets. Stop after the two requests, regardless of outcome. No deployment, merge or production change is included.
+
+## Final authorized live retest
+
+The authorized retest used commit `48ef4d7` and sent exactly one request per provider. Fallback was disabled and no automatic retry was performed.
+
+| Provider | HTTP result | Validated interpretation | Sanitized evidence |
+| --- | --- | --- | --- |
+| Meta | 502 | **No** | Authenticated login succeeded; the single interpretation request returned the generic unavailable response in 756 ms. No raw upstream body or credential detail was logged. Testing stopped for Meta. |
+| Baseten | 200 | **Yes** | Authenticated login succeeded; the single interpretation request returned provider `baseten` in 1,035 ms. The response contained exactly the canonical intent keys `date`, `destination`, `maxWalkingMinutes`, `mode`, `origin`, `preference`, and `time`, and passed Tuka's existing strict validator. |
+
+No additional requests were made after these two calls. Baseten is therefore live verified as usable. Meta remains an accurately documented provider limitation: its one authorized request did not produce a usable interpreted intent through the application.

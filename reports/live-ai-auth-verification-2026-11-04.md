@@ -76,3 +76,12 @@ Before this live run, the reconstructed checkout passed 198 Node tests (100 + 64
 ## Remaining limitation
 
 Authentication and the local application shell are verified. The two authorized provider requests were made without retry and both failed the strict structured-tool contract, so live journey interpretation remains **not verified as usable**. A future fix should first inspect the provider-specific tool-call response shape and add a provider adapter/test fixture; it should not increase retry or fallback budgets without new approval.
+
+## Final authorized retest on compatibility commit
+
+Using commit `48ef4d7`, exactly one authenticated request was made to each provider with fallback and retries disabled:
+
+- **Meta:** login succeeded; interpretation returned HTTP 502 in 756 ms. No valid intent was accepted. No retry was made.
+- **Baseten:** login succeeded; interpretation returned HTTP 200 in 1,035 ms. The response was labeled `baseten`, contained exactly the canonical intent keys, and passed the existing strict validator. This is a genuinely usable live journey interpretation.
+
+No raw provider responses, credentials or session values were recorded. No further requests were made.
