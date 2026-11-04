@@ -6,21 +6,118 @@
 
 > **A hackathon contribution repository, not a republication of the original app.** Tuka. began as a Skopje transit application before the event. This repository contains event contributions, tests, documentation, and a reproducible procedure for integrating them with the separately disclosed original codebase.
 
-## Why Tuka.?
+## The problem we're solving
 
-Transit information is fragmented across cities, operators, and data formats. Tuka. explores a more consistent experience: discover nearby stops on a map, inspect routes, plan journeys, and use transit-focused AI assistance without treating model-generated text as authoritative arrival data.
+Public transport should not require learning a different app in every city. Timetables, stops, live updates, route geometry, languages, and operator notices vary between networks. Riders still ask the same questions: **Where do I board? Which bus should I take? Will I make my connection? Can I arrive by a specific time?**
 
-The hackathon work extends the Skopje foundation toward a **multi-city, GTFS-powered experience**, including Boston and Tilburg. Availability and accuracy depend on the underlying local feeds; a city being supported does not imply every route has real-time coverage.
+Tuka. began before the event as a **map-first Skopje bus app** with stop information, arrivals, and a journey planner. **The hackathon contribution was to turn that city-specific foundation into a reusable transit experience**: connect different networks, import compatible timetables, and let riders describe a trip naturally while the routing engine—not an AI model—determines actual journeys.
 
-## What the hackathon adds
+## What we built during the hackathon
 
-- **Multi-city transit:** GTFS integration for additional cities, including Boston and Tilburg.
-- **Bring your own feed:** local GTFS ZIP import functionality.
-- **Journey assistance:** transit-scoped AI interpretation with strict, validated intent fields rather than invented route IDs, trips, coordinates, or arrival predictions.
-- **Local-first experience:** localization, additional transit UI, and city-specific information.
-- **More rider tools:** ticket-wallet functionality and regression coverage.
+### 1. One interface, different transit networks
 
-These are descriptions of the hackathon contributions, **not claims that all features have been end-to-end verified in every city**. See [HACKATHON_SCOPE.md](HACKATHON_SCOPE.md) for authorship boundaries.
+We introduced a shared city-provider architecture so the same map, stops, routes, and journey-planning interface can use different cities' timetable data. **Boston** and **Tilburg** were added alongside the existing **Skopje** experience.
+
+- A rider selects a supported city or lets location help choose it.
+- Tuka loads that network's stops, routes, schedules, and available live-data adapters.
+- City-specific time zones, service calendars, saved information, and asynchronous requests are kept aligned with the selected network.
+- Switching cities changes the underlying transit data, not just the city name displayed on screen.
+
+**Why it matters:** the user learns one transit interface instead of starting from scratch in every city. Published schedules remain useful when real-time coverage is missing.
+
+### 2. Bring your own city with a GTFS ZIP
+
+The universal importer makes the concept more than a three-city demo. A rider can choose **Import a network**, select a compatible **GTFS Schedule ZIP**, review the feed, and open its stops and routes in Tuka. **No new city-specific application code is required for a compatible schedule feed.**
+
+Under the hood, a browser worker validates and normalizes the schedule, derives agencies and coverage, and stores imported timetable data locally using IndexedDB. The existing map, route explorer, departures, and planner then consume that normalized network.
+
+**Demonstrated beyond the three built-in cities:** Wellington's public Metlink feed was imported, and the app displayed the imported network on the map without a Wellington-specific implementation. The reported import contained **3,123 stops, 245 routes, 10,080 trips, and 22 agencies**. This establishes import and visualization—not independently verified Wellington journey accuracy.
+
+**Limits:** the importer handles compatible fixed-route GTFS Schedule ZIPs, not automatic real-time feeds, fares, operator news, or ticket integrations. Current limits are 50 MB compressed / 200 MB expanded.
+
+### 3. Real transit data for Boston and Tilburg
+
+Adding a city means more than drawing pins. The hackathon work included ingestion pipelines that preserve route identities, stop sequences, calendar rules, departure times, and published route shapes.
+
+| Network | Hackathon work |
+| --- | --- |
+| **Skopje** | Existing foundation adapted to the shared multi-city experience |
+| **Boston** | Official MBTA bus/shuttle schedules and GTFS-Realtime integration |
+| **Tilburg region** | Regional bus dataset extracted from a much larger Netherlands feed, with full selected trips retained even when they travel beyond the initial region |
+
+The Tilburg ingestion audit compared **407,058 stop calls across 16,873 trips** and reported zero mismatches in the compared identifiers, stop order, times, and boarding restrictions. This is **data-integrity evidence**, not a promise that every bus operates exactly on schedule.
+
+Where available, real-time updates are matched against the underlying network using identifiers and freshness checks. Unmatched or stale updates should not silently become predictions.
+
+### 4. Ask for a journey in natural language
+
+We added a transit-focused Copilot integration that converts a rider's request into **structured planner inputs**.
+
+For example:
+
+> Get me to Tilburg Centraal tomorrow by 9:00, with no more than ten minutes of walking.
+
+The intended flow is:
+
+```text
+Rider describes a trip
+        ↓
+Meta / Baseten model interprets the request
+        ↓
+Strict server validation of places, date, time,
+preference, mode and walking limit
+        ↓
+Rider reviews or resolves ambiguous inputs
+        ↓
+Tuka's timetable-based journey planner finds routes
+        ↓
+Journey options, transfers and paths appear on the map
+```
+
+**The important engineering boundary:** AI interprets the rider's intent; it does **not** invent routes, trips, stop coordinates, departure predictions, or a completed itinerary. Those are resolved using transit data and the existing routing engine.
+
+The provider gateway supports Meta and Baseten, with server-side credentials, bounded requests, validation, and controlled fallback. **Baseten successfully returned a live, schema-validated journey intent** in the final test. Direct Meta inference returned HTTP 502 and is not claimed as live working. A valid interpreted intent does not itself prove that a subsequent real-world journey is correct.
+
+### 5. Plan a trip even when you're already on the bus
+
+The hackathon Journey tab added an **onboard starting mode**. Instead of pretending every journey begins at a bus stop on foot, a rider can identify their current line, direction, and next stop. The planner can then compare remaining aboard against changing services later in the journey.
+
+The journey interface also supports leaving now, leaving later, or arriving by a deadline, with preferences such as fewer transfers or less walking. This builds on the **pre-existing journey planner** rather than claiming that the entire routing engine was written during the hackathon.
+
+### 6. A more local, understandable experience
+
+The expansion included:
+
+- **Language support:** English, Macedonian, Albanian, and Dutch in the hackathon interface.
+- **Local service notices:** Tilburg operator notices, with an English-reading option that retains the original and labels machine-generated translation.
+- **Map and route improvements:** published route geometry, directional variants, stop-to-shape matching, and explicit handling of approximations.
+- **Rider continuity:** city-aware saved stops, places, and preferences; journey/ride guidance and additional ticket-wallet functionality.
+- **Installable experience:** a PWA-style app that retains the familiar interface when switching supported networks.
+
+Some capabilities depend on each city's data sources. Importing a GTFS schedule does **not** automatically enable live arrivals, notices, or ticket purchasing.
+
+## What a judge can try
+
+1. **Switch cities:** open Skopje, Boston, and Tilburg and observe the network data change inside the same interface.
+2. **Explore a stop:** select a stop, inspect its routes and upcoming departures, and follow a route overlay.
+3. **Plan a journey:** choose a destination, set an arrive-by time, and inspect the proposed route and transfers.
+4. **Try onboard planning:** select a bus line, direction, and next stop to start from an ongoing ride.
+5. **Inspect the AI handoff:** enter a natural-language transit request and review the validated planner fields. This requires working provider credentials.
+6. **Import another network:** select a compatible GTFS Schedule ZIP and review the network before opening it.
+
+The live demo may require authorized login credentials. Network coverage, live notices, and model availability vary. The documented source reconstruction is the reproducible path for judges who want to inspect the implementation.
+
+## What is new, and what was already there?
+
+| Before the hackathon | Added or extended during the hackathon |
+| --- | --- |
+| Skopje map-first bus experience | Shared city-provider architecture for additional networks |
+| Existing stop, route, and arrival features | Boston and Tilburg data ingestion and realtime adapters |
+| Existing journey-planning engine | Onboard journey entry, city-aware planning, and AI-to-planner handoff |
+| Skopje-specific app experience | Generic GTFS ZIP importer and local schedule storage |
+| Existing app foundation and UI | Localization, notices, multi-city UI adaptations, tests, and verification |
+
+**Only the event-era additions and modifications are presented as hackathon work.** The original application remains a separately disclosed dependency, and the post-event provider compatibility patch is separately identified in the provenance section below.
 
 ## Judge quick start
 
