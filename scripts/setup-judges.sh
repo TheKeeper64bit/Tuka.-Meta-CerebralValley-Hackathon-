@@ -80,6 +80,14 @@ if [[ "$actual" != "$expected" ]]; then
   exit 1
 fi
 echo 'PASS: exact source reconstruction'
+# Apply post-event compatibility fixes as a reviewable hackathon contribution.
+# The pinned integrated event tree remains the reconstruction baseline above.
+COMPAT_PATCH="$ROOT/patches/provider-tool-compat.patch"
+if [[ -f "$COMPAT_PATCH" ]]; then
+  git apply --check "$COMPAT_PATCH"
+  git apply "$COMPAT_PATCH"
+  echo "Applied hackathon compatibility patch: $(basename "$COMPAT_PATCH")"
+fi
 if [[ "$MODE" == verify ]]; then exit 0; fi
 npm ci
 if [[ "$MODE" == test ]]; then npm test; fi
